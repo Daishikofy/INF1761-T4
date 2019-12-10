@@ -9,6 +9,10 @@ public class Surface : MonoBehaviour
 
     [SerializeField]
     private int xSize, ySize;
+    [SerializeField]
+    private Material material;
+    [SerializeField]
+    private float wait;
     private Mesh mesh;
     private Vector3[] vertices;
     private int[] triangles;
@@ -17,10 +21,13 @@ public class Surface : MonoBehaviour
     {
         vertices = new Vector3[(xSize + 1)*(ySize + 1)];
         triangles = new int[xSize * ySize * 6];
-        generate();
+
+        GetComponent<MeshRenderer>().material = material;
+
+        StartCoroutine(generate());
     }
 
-    private void generate()
+    private IEnumerator generate()
     {
         GetComponent<MeshFilter>().mesh = mesh = new Mesh();
         mesh.name = "Procedural Grid";
@@ -29,6 +36,7 @@ public class Surface : MonoBehaviour
             for (int x = 0; x <= xSize; x++, i++)
             {
                 vertices[i] = new Vector3(x, y);
+                yield return new WaitForSeconds(wait);
             }
         }
         mesh.vertices = vertices;
@@ -50,9 +58,10 @@ public class Surface : MonoBehaviour
     private void OnDrawGizmos()
     {
         if (vertices == null) return;
-        Gizmos.color = Color.black;
         for(int i = 0; i < vertices.Length; i++)
         {
+            Color color = new Color(vertices[i].x / xSize, vertices[i].y / ySize, vertices[i].z / 1);
+            Gizmos.color = color;
             Gizmos.DrawSphere(vertices[i], 0.1f);
         }
 

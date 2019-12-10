@@ -1,20 +1,26 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
+using UnityEngine.Events;
 using UnityEngine;
 
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 
 public class Cube : MonoBehaviour
 {
-    [SerializeField]
-    private int xSize, ySize, zSize;
+    
+    public int xSize, ySize, zSize;
     [SerializeField]
     float wait;
+    [SerializeField]
+    private Material material;
+
     private Mesh mesh;
     private Vector3[] vertices;
     private int[] triangles;
 
-    void Awake()
+    public UnityEvent meshReady;
+    public bool drawGizmos = true;
+  
+    void Start()
     {   
         int cornerVertices = 8;
         int edgeVertices = (xSize + ySize + zSize - 3) * 4;
@@ -24,12 +30,12 @@ public class Cube : MonoBehaviour
         vertices = new Vector3[cornerVertices + edgeVertices + faceVertices];
         vertices = new Vector3[cornerVertices + edgeVertices + faceVertices];
 
-        generateVertices();
-        generateTriangles();
+        GetComponent<MeshRenderer>().material = material;
 
+        StartCoroutine(generateVertices());
     }
 
-    private void generateVertices ()
+    private IEnumerator generateVertices ()
     {
         GetComponent<MeshFilter>().mesh = mesh = new Mesh();
         mesh.name = "Procedural Cube";
@@ -38,19 +44,23 @@ public class Cube : MonoBehaviour
         {
             for (int x = 0; x <= xSize; x++)
             {
-                    vertices[v++] = new Vector3(x, y, 0);
+                vertices[v++] = new Vector3(x, y, 0);
+                yield return new WaitForSeconds(wait);
             }
             for (int z = 1; z <= zSize; z++)
             {
-                    vertices[v++] = new Vector3(xSize, y, z);
+                vertices[v++] = new Vector3(xSize, y, z);
+                yield return new WaitForSeconds(wait);
             }
             for (int x = xSize - 1; x >= 0; x--)
             {
-                    vertices[v++] = new Vector3(x, y, zSize);
+                vertices[v++] = new Vector3(x, y, zSize);
+                yield return new WaitForSeconds(wait);
             }
             for (int z = zSize - 1; z > 0; z--)
             {
-                    vertices[v++] = new Vector3(0, y, z);
+                vertices[v++] = new Vector3(0, y, z);
+                yield return new WaitForSeconds(wait);
             }
         }
 
@@ -58,19 +68,21 @@ public class Cube : MonoBehaviour
         {
             for (int x = 1; x < xSize; x++)
             {
-                    vertices[v++] = new Vector3(x, ySize, z);
+                vertices[v++] = new Vector3(x, ySize, z);
+                yield return new WaitForSeconds(wait);
             }
         }
         for (int z = 1; z < zSize; z++)
         {
             for (int x = 1; x < xSize; x++)
             {
-                    vertices[v++] = new Vector3(x, 0, z);
+                vertices[v++] = new Vector3(x, 0, z);
+                yield return new WaitForSeconds(wait);
             }
         }
 
         mesh.vertices = vertices;
-
+        generateTriangles();
     }
 
     private void generateTriangles ()
@@ -92,6 +104,7 @@ public class Cube : MonoBehaviour
         t = CreateBottomFace(triangles, t, ring);
 
         mesh.triangles = triangles;
+        meshReady.Invoke();
     }
 
     private int CreateTopFace(int[] triangles, int t, int ring)
@@ -179,39 +192,23 @@ public class Cube : MonoBehaviour
 
     public void OnDrawGizmos()
     {
-        if (vertices == null) return;
-        Gizmos.color = Color.black;
+        if (vertices == null || !drawGizmos) return;
+        
         for(int i = 0; i < vertices.Length; i++)
         {
-            Gizmos.DrawSphere(vertices[i], 0.1f);
+            Color color = new Color(vertices[i].x/xSize, vertices[i].y/ ySize , vertices[i].z/zSize);
+            Gizmos.color = color;
+            if(this.transform.parent)
+                Gizmos.DrawSphere(vertices[i] + this.transform.parent.position, 0.1f);
+            else
+                Gizmos.DrawSphere(vertices[i], 0.1f);
         }
     }
+
+    public void setSizes(int x, int y, int z)
+    {
+        xSize = x;
+        ySize = y;
+        zSize = z;
+    }
 }
-
-    /*
-        private IEnumerator generate()
-        {
-            GetComponent<MeshFilter>().mesh = mesh = new Mesh();
-            mesh.name = "Procedural Cube";
-            for (int i = 0, z = 0; z <= zSize; z++)
-            {
-                for (int y = 0; y <= ySize; y++)
-                {
-                    if (z == 0 || z == zSize || y == 0 || y == ySize)
-                        for (int x = 0; x <= xSize; x++, i++)
-                        {
-                            vertices[i] = new Vector3(x, y, z);
-                            yield return new WaitForSeconds(wait);
-                        }
-                    else
-                        for (int x = 0; x <= xSize; x+=xSize, i++)
-                        {
-                            vertices[i] = new Vector3(x, y, z);
-                            yield return new WaitForSeconds(wait);
-                        }
-                }
-            }
-
-            mesh.vertices = vertices;
-        }
-    */

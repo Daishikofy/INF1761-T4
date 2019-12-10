@@ -15,7 +15,7 @@ public class RoundedCube : MonoBehaviour
     private int[] triangles;
     private Vector3[] normals;
 
-    void Awake()
+    void Start()
     {
         int cornerVertices = 8;
         int edgeVertices = (xSize + ySize + zSize - 3) * 4;
@@ -225,10 +225,21 @@ public class RoundedCube : MonoBehaviour
         if (vertices == null) return;
         for(int i = 0; i < vertices.Length; i++)
         {
-            Gizmos.color = Color.black;
-            Gizmos.DrawSphere(vertices[i], 0.1f);
+            Color color = new Color(vertices[i].x / xSize, vertices[i].y / ySize, vertices[i].z / zSize);
+            Gizmos.color = color;
+            Gizmos.DrawSphere(vertices[i] + this.transform.parent.position, 0.1f);
             Gizmos.color = Color.yellow;
-            Gizmos.DrawRay(vertices[i], normals[i]);
+            Gizmos.DrawRay(vertices[i] + this.transform.parent.position, normals[i]);
         }
+    }
+    public void setSizes(int x, int y, int z)
+    {
+        xSize = x;
+        ySize = y;
+        zSize = z;
+    }
+    public void setRoundness(float roundness)
+    {
+        this.roundness = roundness;
     }
 }

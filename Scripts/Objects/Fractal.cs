@@ -95,4 +95,11 @@ public class Fractal : MonoBehaviour {
             new GameObject("Fractal Child").AddComponent<Fractal>().Initialize(this, directions[i], orientations[i]);
         }
     }
+
+    public void setScaleAndDepth(float scale, int depth)
+    {
+        this.childScale = scale;
+        this.maxDepth = depth;
+    }
 }
+
