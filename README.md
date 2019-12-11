@@ -55,12 +55,122 @@ Shader "Custom/firstShader"
 	}
 }
 ```
-Eu construi um shader com um unico subshader e pass.
 
-#### B . Applicar uma textura
-HLSL + Unity possui ...
+![transparentsphere.jpg](Textures/Pictures/transparentsphere.jpg)
+
+A parte das propertie é onde definimos as variaveis que vão aparecer no inspector para poder modificar o shader sem precisar mexer no codigo.
+
+```C
+
+Properties
+	{
+		_Color("Color", Color) = (1, 1, 1, 1)
+		
+		_MainTex("Texture", 2D) = "white" {}
+		_AlphaCutoff("Alpha Cutoff", Range(0, 1)) = 0.5
+		_DetailTex("Detail Texture", 2D) = "white" {}
+
+		[NoScaleOffset] _FlowMap("Flow (RG)", 2D) = "black" {}
+		_AnimSpeed("AnimSpeed", Range(0, 1)) = 0.5
+	}
+
+```
+![editor.jpg](Textures/Pictures/editor.jpg)
+
+
+
+Eu construi um shader com um unico subshader e pass.
+Neste subshader eu implementei duas funções, uma de **vertex** e outra de **fragment**
+
+```C
+CGPROGRAM
+	#pragma vertex MyVertexProgram
+	#pragma fragment MyFragmentProgram
+
+```
+A saida do MyVertexProgram serve de entrada para MyFragmentProgram, essas duas funções são geralmente fusionada em uma função *surf* que modifica a superficie do mesh no geral.
+
+
+
+#### B . Applicar uma textura e textura detalhada
+![visible UV on sphere.png](/Textures/Pictures/visible UV on sphere.png)
+Visualização das coordenadas de textura
+
+```C
+float4 MyFragmentProgram(Interpolators i ) : SV_TARGET
+		{
+			float4 albedo = tex2D(_MainTex, i.uv) * _Color;
+			albedo *= tex2D(_DetailTex, i.uv * 10) * _Color * 2;
+			return albedo;
+		}
+```
+
+![notUsingDetailTexture.png](/Textures/Pictures/notUsingDetailTexture.png)
+Sem textura de detalhe
+![usingDetailTexture.png](/Textures/Pictures/usingDetailTexture.png)
+Com texura de detalhe
+
 #### C . Applicar uma luz
-//TODO
+Ver o video
+**Primeiro calculamos e representamos as normais**
+As normais são calculadas no espaço do objeto, logo é preciso fazer uma transformação matricial para representar las em coordenadas do mundo.
+```C
+	i.normal = UnityObjectToWorldNormal(v.normal);
+```
+
+Podemos usar as coordenadas das normais como parametro de cores para representar las.
+```C
+	float4 MyFragmentProgram(Interpolators i ) : SV_TARGET
+		{
+			float4 normal = float4(i.normal * 0.5 + 0.5, 1);
+			i.normal = normalize(i.normal);
+
+			float4 albedo = tex2D(_MainTex, i.uv) * _Color;
+			albedo *= tex2D(_DetailTex, i.uv * 10) * 2;
+
+			return albedo * float4(light, 1);
+}
+```
+Em seguida realizamos um produto escalar entre o vetor da direção da luz e as normais para poder representar a luz real
+```C
+	float4 MyFragmentProgram(Interpolators i ) : SV_TARGET
+		{
+			float3 lightDir = _WorldSpaceLightPos0.xyz;
+			float4 normal = float4(i.normal * 0.5 + 0.5, 1);
+			i.normal = normalize(i.normal);
+			float3 light = DotClamped(lightDir, i.normal) * _LightColor0.rgb;
+
+			float4 albedo = tex2D(_MainTex, i.uv) * _Color;
+			albedo *= tex2D(_DetailTex, i.uv * 10) * _Color * 2;
+
+			return albedo * float4(light, 1);
+}
+
+```
+
 #### D . Aplicar transparencia
-//TODO
+Para aplica a transparencia eu usei uma textura com um canal alpha variavel.
+
+![transparency](Textures/transparency.png)
+
+A ideia é bem simples, primeiro eu realizei um clamp a partir de um certo nivel de alpha. Tudo que estiver em um lugar aonde o alpha da textura esta abaixo de um certo nível tem alpha 0, o resto tem alpha 1. Este tipo de método permite obter um resultado bem "afiado" mas que não corresponde bem com o que eu queria. Para poder usar o alpha da minha textura como alpha da inha cor era preciso adicionar *Blend SrcAlpha OneMinusSrcAlpha* no inicio do meu pass.
+Em seguida eu inseri o seguinte código:
+
+```C
+float GetAlpha(Interpolators i) {
+	return _Color.a * tex2D(_MainTex, i.uv.xy).a;
+}
+
+MyFragmentProgram {
+...
+	float alpha = GetAlpha(i);
+	albedo.a = alpha - _AlphaCutoff;
+	clip(alpha - _AlphaCutoff);
+...}
+```
+
 #### E . Usar FlowMap para criar um fluxo de distorção
+Para animar uma textura em um shader basta mover a posição das coordenadas UV adicionando as com *_Time.y*
+
+![flowMap](Textures/flowmap.png)
+
