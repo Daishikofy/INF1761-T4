@@ -26,7 +26,6 @@ Por essa razão tentamos uma outra abordagem.
 
 #### B . Cubo projetado na superficie de uma esfera usando física
 Desta vez, em vez de projetar os vertices na superficie de uma esfera contida no cubo, vamos projetar os vertices em uma efsfera que contem o cubo. Para isso usando uma simulação do principio de electromagnetismo.
-//TODO
 
 ### II - Criação de um shader com HLSL e Unity
 
@@ -55,8 +54,6 @@ Shader "Custom/firstShader"
 	}
 }
 ```
-
-![transparentsphere.jpg](Textures/Pictures/transparentsphere.jpg)
 
 A parte das propertie é onde definimos as variaveis que vão aparecer no inspector para poder modificar o shader sem precisar mexer no codigo.
 
@@ -173,4 +170,7 @@ MyFragmentProgram {
 Para animar uma textura em um shader basta mover a posição das coordenadas UV adicionando as com *_Time.y*
 
 ![flowMap](Textures/flowmap.png)
+*FlowMap*
 
+![transparentsphere.jpg](Textures/Pictures/transparentsphere.jpg)
+*Results*
