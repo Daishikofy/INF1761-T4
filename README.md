@@ -167,10 +167,25 @@ MyFragmentProgram {
 ```
 
 #### E . Usar FlowMap para criar um fluxo de distorção
-Para animar uma textura em um shader basta mover a posição das coordenadas UV adicionando as com *_Time.y*
+Para animar uma textura em um shader basta mover a posição das coordenadas UV adicionando as com *_Time.y* a ideia é usar uma textura com valores nos canais verde e vermelho, desta forma, cada fragment tem um par de coordenadas associadas na flow map que representam a direção que o fluxo vai seguir.
 
 ![flowMap](Textures/flowmap.png)
 *FlowMap*
+
+Em seguida basta multiplicar a coordenada de textura do fragment pelo vetor de flow e pelo tempo, de tal forma que aconteça um deslocamento das cores na região. Eu adicionei uma variavel para modificar a velocidade de deslocamento.
+```C
+float2 FlowUV(float2 uv, float2 flowVector, float time) {
+				float progress = frac(time*0.2);
+				return uv + flowVector * progress * _AnimSpeed;
+			}
+			
+MyFragmentProgram { 
+	float2 flowVector = tex2D(_FlowMap, i.uv).rg * 2 - 1;
+	i.uv = FlowUV(i.uv, flowVector, _Time.y);
+...
+}
+
+```
 
 ![transparentsphere.jpg](Textures/Pictures/transparentsphere.jpg)
 *Results*
